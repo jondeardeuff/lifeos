@@ -2,9 +2,9 @@
   "name": "lifeos",
   "version": "1.0.0",
   "description": "Voice-first AI-powered life management system",
-  "main": "railway-app/server.js",
+  "main": "server.js",
   "scripts": {
-    "start": "node railway-app/server.js",
+    "start": "node server.js",
     "build": "echo 'Build complete - using pre-built server'"
   },
   "dependencies": {

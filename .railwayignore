@@ -1,0 +1,10 @@
+# Ignore everything except railway-app
+apps/
+packages/
+tools/
+docs/
+*.md
+!railway-app/
+!package.json
+!railway-app/package.json
+!railway-app/server.js
