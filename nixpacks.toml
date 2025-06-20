@@ -1,11 +1,8 @@
 [phases.setup]
-nixPkgs = ['nodejs_20']
+nixPkgs = ['nodejs_20', 'npm']
 
 [phases.install]
-cmds = ['npm install']
-
-[phases.build]
-cmds = ['echo "No build needed - using pre-built server"']
+cmds = ['npm install --production']
 
 [start]
 cmd = 'node server.js'
