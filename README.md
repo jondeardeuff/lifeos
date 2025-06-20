@@ -1,31 +1,52 @@
-# Life OS - Voice-First Life Management System
+# 🧬 LifeOS - Voice-First Life Management System
 
 A comprehensive, AI-powered life management platform that seamlessly integrates work and personal tasks, calendar, finances, and communication through natural voice interaction.
 
-## 🚀 Quick Start
+## ✨ Features
+
+- 🔐 **Complete Authentication System** - JWT-based auth with signup/login
+- 📋 **Task Management** - Full CRUD operations with priorities, assignments, and dependencies  
+- 🗄️ **PostgreSQL Database** - 29 tables covering users, tasks, projects, finances, and more
+- 🚀 **GraphQL API** - Modern API with Apollo Server
+- 🎨 **React Frontend** - Responsive UI with Tailwind CSS
+- 🐳 **Production Ready** - Docker and Railway deployment configured
+
+## 🚀 Quick Deploy to Railway
+
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/lifeos)
+
+1. Click the deploy button above
+2. Set environment variables:
+   ```
+   NODE_ENV=production
+   PORT=4000
+   JWT_SECRET=your-super-secret-jwt-key
+   CORS_ORIGIN=*
+   ```
+3. Your LifeOS API will be live at `https://your-app.railway.app/graphql`
+
+## 🛠️ Local Development
 
 ### Prerequisites
 
 - Node.js >= 20.0.0
 - pnpm >= 8.0.0
 - PostgreSQL 15
-- Redis
 
 ### Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/lifeos.git
+git clone https://github.com/jondeardeuff/lifeos.git
 cd lifeos
 
 # Install dependencies
 pnpm install
 
-# Copy environment variables
-cp .env.example .env
-
 # Set up the database
 cd packages/database
+cp .env.example .env
+# Edit .env with your database credentials
 pnpm db:push
 pnpm db:seed
 
@@ -34,110 +55,101 @@ cd ../..
 pnpm dev
 ```
 
-The application will be available at:
-- Web app: http://localhost:3000
-- API: http://localhost:4000
-- GraphQL Playground: http://localhost:4000/graphql
+## 🌐 API Endpoints
+
+### GraphQL Playground
+Visit `/graphql` on your deployed URL for interactive API exploration.
+
+### Example Queries
+
+**Health Check:**
+```graphql
+query {
+  health
+}
+```
+
+**User Login:**
+```graphql
+mutation {
+  login(email: "test@lifeos.dev", password: "password123") {
+    user {
+      firstName
+      lastName
+      email
+    }
+    accessToken
+  }
+}
+```
+
+**Get Tasks:**
+```graphql
+query {
+  tasks {
+    id
+    title
+    status
+    priority
+    dueDate
+  }
+}
+```
 
 ## 📁 Project Structure
 
 ```
 lifeos/
 ├── apps/
-│   ├── web/          # React web application
-│   ├── api/          # Fastify + GraphQL API server
-│   ├── mobile/       # React Native mobile app
-│   └── docs/         # Documentation site
+│   ├── api/          # GraphQL API server
+│   └── web/          # React web application
 ├── packages/
-│   ├── core/         # Core business logic
-│   ├── ui/           # Shared UI components
 │   ├── database/     # Prisma database client
 │   ├── types/        # Shared TypeScript types
-│   ├── utils/        # Shared utilities
-│   ├── voice/        # Voice processing logic
-│   └── ai/           # AI/LLM integration
-├── services/
-│   ├── auth/         # Authentication service
-│   ├── sync/         # Data sync service
-│   └── notifications/ # Notification service
-└── tools/
-    ├── eslint-config/ # Shared ESLint config
-    └── tsconfig/      # Shared TypeScript config
+│   └── ui/           # Shared UI components
+├── railway-app/      # Simplified deployment build
+└── tools/            # Development tooling
 ```
 
-## 🛠️ Tech Stack
+## 🗄️ Database Schema
 
-- **Frontend**: React 18, TypeScript, Tailwind CSS, Zustand, React Query
-- **Backend**: Node.js, Fastify, GraphQL, Prisma, PostgreSQL
-- **Mobile**: React Native, Expo
-- **Voice**: Web Speech API, OpenAI Whisper
-- **AI**: OpenAI GPT-4, Anthropic Claude
-- **Infrastructure**: AWS, Docker, GitHub Actions
+**Core Entities:**
+- 👥 Users & Authentication
+- 📋 Tasks & Projects
+- 📅 Calendar & Events
+- 💰 Financial Management
+- 🎙️ Voice & AI Context
+- 📊 Audit Logging
 
-## 📝 Available Scripts
+## 🚀 Deployment
 
-```bash
-# Development
-pnpm dev              # Start all apps in development mode
-pnpm dev --filter=web # Start only the web app
+### Railway (Recommended)
 
-# Building
-pnpm build            # Build all packages
-pnpm build --filter=api # Build only the API
+1. Fork this repository
+2. Connect to [Railway](https://railway.app)
+3. Deploy from GitHub repo
+4. Add PostgreSQL database service
+5. Set environment variables
 
-# Testing
-pnpm test             # Run all tests
-pnpm test:e2e         # Run E2E tests
-
-# Code Quality
-pnpm lint             # Lint all packages
-pnpm typecheck        # Type check all packages
-pnpm format           # Format code with Prettier
-
-# Database
-pnpm db:migrate:dev   # Run migrations in development
-pnpm db:studio        # Open Prisma Studio
-```
-
-## 🔧 Configuration
-
-### Environment Variables
-
-See `.env.example` for all required environment variables.
-
-### Database Setup
+### Docker
 
 ```bash
-# Create database
-createdb lifeos_dev
-
-# Run migrations
-cd packages/database
-pnpm db:migrate:dev
-
-# Seed with sample data
-pnpm db:seed
+docker build -t lifeos .
+docker run -p 4000:4000 lifeos
 ```
 
 ## 🧪 Testing
 
 ```bash
-# Unit tests
+# Run tests
 pnpm test
 
-# E2E tests
-pnpm test:e2e
+# Type checking
+pnpm typecheck
 
-# Test coverage
-pnpm test:coverage
+# Linting
+pnpm lint
 ```
-
-## 📚 Documentation
-
-- [Architecture Overview](docs/architecture/README.md)
-- [API Documentation](docs/api/README.md)
-- [Development Guide](docs/guides/development.md)
-- [Deployment Guide](docs/guides/deployment.md)
 
 ## 🤝 Contributing
 
@@ -150,3 +162,14 @@ pnpm test:coverage
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- Built with [Apollo Server](https://www.apollographql.com/docs/apollo-server/)
+- UI powered by [React](https://reactjs.org/) and [Tailwind CSS](https://tailwindcss.com/)
+- Database with [Prisma](https://www.prisma.io/) and [PostgreSQL](https://www.postgresql.org/)
+- Deployed on [Railway](https://railway.app/)
+
+---
+
+**🤖 Generated with [Claude Code](https://claude.ai/code)**
