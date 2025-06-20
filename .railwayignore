@@ -1,10 +1,11 @@
-# Ignore everything except railway-app
+# Railway deployment - only include essential files
 apps/
 packages/
 tools/
 docs/
 *.md
-!railway-app/
-!package.json
-!railway-app/package.json
-!railway-app/server.js
+Dockerfile.simple
+railway-simple.json
+railway.json
+deploy-railway.sh
+railway-postgres.md
