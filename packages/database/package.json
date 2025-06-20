@@ -1,0 +1,30 @@
+{
+  "name": "@lifeos/database",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate:dev": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:seed": "tsx seed.ts",
+    "db:studio": "prisma studio",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@lifeos/types": "workspace:*",
+    "@prisma/client": "^5.0.0"
+  },
+  "devDependencies": {
+    "@lifeos/tsconfig": "workspace:*",
+    "@types/node": "^20.19.1",
+    "prisma": "^5.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  }
+}

@@ -1,0 +1,82 @@
+# Life OS Cursor Rules
+
+## Code Style
+- Use TypeScript strict mode
+- No `any` types - use `unknown` and type guards
+- Prefer interfaces over types for objects
+- Use enums for finite sets of values
+- Export types separately from implementations
+
+## Naming Conventions
+- Components: PascalCase (e.g., `TaskList`, `VoiceInput`)
+- Functions: camelCase (e.g., `parseVoiceCommand`, `syncCalendar`)
+- Constants: UPPER_SNAKE_CASE (e.g., `MAX_RETRY_ATTEMPTS`)
+- Files: kebab-case (e.g., `task-parser.ts`, `voice-input.tsx`)
+- Test files: `*.test.ts` or `*.spec.ts`
+
+## Component Guidelines
+- Always use function components with TypeScript
+- Return object with named properties from hooks, not arrays
+- Handle cleanup in useEffect
+- Memoize expensive computations
+
+## State Management
+- Use Zustand for global state
+- Keep state normalized (no nested objects)
+- Actions should be pure functions
+- Use immer for immutable updates
+
+## Testing Requirements
+- Minimum 80% coverage for business logic
+- 100% coverage for financial calculations
+- E2E tests for critical user flows
+
+## Performance Rules
+- Memoize expensive components with React.memo
+- Use useMemo for expensive computations
+- Virtualize long lists (>100 items)
+- Lazy load routes and heavy components
+
+## Security Requirements
+- Never log sensitive data (passwords, tokens, financial)
+- Sanitize all user inputs
+- Use parameterized queries (no string concatenation)
+- Implement rate limiting on all endpoints
+
+## Voice/AI Specific Rules
+- Always provide text feedback for voice inputs
+- Show confidence scores when < 90%
+- Implement "undo" for voice actions
+- Max 30 seconds recording time
+
+## Database Patterns
+- Never modify existing migrations
+- One migration per feature
+- Include rollback scripts
+- Test migrations on copy of production
+
+## Git Commit Rules
+- feat: add voice recording to task creation
+- fix: resolve timezone issue in calendar sync  
+- refactor: extract task parser into separate module
+- test: add unit tests for financial calculations
+- docs: update API documentation for v2 endpoints
+
+## Documentation
+- Use JSDoc for complex functions
+- Each feature folder must have README
+- Document API endpoints with OpenAPI
+- Include examples in comments
+
+## Accessibility
+- All interactive elements keyboard accessible
+- ARIA labels on all controls
+- Color contrast ratio >= 4.5:1
+- Focus indicators visible
+- Screen reader announcements for dynamic content
+
+## Progressive Enhancement
+- Cache critical data locally
+- Queue actions when offline
+- Sync when connection restored
+- Show offline status clearly

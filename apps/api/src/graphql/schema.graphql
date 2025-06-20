@@ -1,0 +1,355 @@
+# Base types
+scalar Date
+scalar JSON
+
+# User types
+type User {
+  id: ID!
+  email: String!
+  phone: String
+  fullName: String!
+  avatarUrl: String
+  timezone: String!
+  settings: JSON!
+  createdAt: Date!
+  updatedAt: Date!
+  deletedAt: Date
+}
+
+type UserRole {
+  id: ID!
+  userId: ID!
+  role: String!
+  scopeType: String
+  scopeId: String
+  grantedAt: Date!
+  grantedBy: String
+}
+
+type UserPreferences {
+  userId: ID!
+  voiceEnabled: Boolean!
+  voiceLanguage: String!
+  notificationSettings: NotificationSettings!
+  calendarSettings: CalendarSettings!
+  financialSettings: FinancialSettings!
+  updatedAt: Date!
+}
+
+type NotificationSettings {
+  email: Boolean!
+  sms: Boolean!
+  push: Boolean!
+  taskReminders: Boolean!
+  eventReminders: Boolean!
+  dailySummary: Boolean!
+}
+
+type CalendarSettings {
+  defaultView: String!
+  weekStartsOn: Int!
+  workingHours: WorkingHours!
+  timeZone: String!
+}
+
+type WorkingHours {
+  start: String!
+  end: String!
+}
+
+type FinancialSettings {
+  currency: String!
+  fiscalYearStart: Int!
+  taxRate: Float
+}
+
+# Task types
+type Task {
+  id: ID!
+  title: String!
+  description: String
+  userId: ID!
+  user: User!
+  projectId: String
+  parentTaskId: String
+  parentTask: Task
+  assigneeId: String
+  assignee: User
+  status: TaskStatus!
+  priority: TaskPriority!
+  dueDate: Date
+  completedAt: Date
+  recurringPattern: RecurringPattern
+  tags: [String!]!
+  metadata: JSON!
+  source: TaskSource!
+  createdAt: Date!
+  updatedAt: Date!
+  
+  # Relations
+  subtasks: [Task!]!
+  comments: [TaskComment!]!
+  attachments: [TaskAttachment!]!
+  dependencies: [TaskDependency!]!
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM_LOW
+  MEDIUM
+  MEDIUM_HIGH
+  HIGH
+}
+
+enum TaskSource {
+  MANUAL
+  VOICE
+  EMAIL
+  API
+}
+
+type RecurringPattern {
+  rule: String!
+  nextOccurrence: Date
+  lastOccurrence: Date
+}
+
+type TaskDependency {
+  taskId: ID!
+  dependsOnTaskId: ID!
+  dependencyType: String!
+}
+
+type TaskComment {
+  id: ID!
+  taskId: ID!
+  task: Task!
+  userId: ID!
+  user: User!
+  comment: String!
+  createdAt: Date!
+  updatedAt: Date!
+}
+
+type TaskAttachment {
+  id: ID!
+  taskId: ID!
+  task: Task!
+  uploadedBy: ID!
+  user: User!
+  fileName: String!
+  fileSize: Int!
+  fileType: String
+  storageUrl: String!
+  createdAt: Date!
+  updatedAt: Date!
+}
+
+# Input types
+input CreateTaskInput {
+  title: String!
+  description: String
+  projectId: String
+  assigneeId: String
+  priority: TaskPriority
+  dueDate: Date
+  tags: [String!]
+}
+
+input UpdateTaskInput {
+  title: String
+  description: String
+  status: TaskStatus
+  priority: TaskPriority
+  dueDate: Date
+  assigneeId: String
+  tags: [String!]
+}
+
+input TaskFilterInput {
+  status: TaskStatus
+  priority: TaskPriority
+  assigneeId: String
+  projectId: String
+  tags: [String!]
+  dueBefore: Date
+  dueAfter: Date
+}
+
+input PaginationInput {
+  page: Int = 1
+  limit: Int = 10
+  sortBy: String = "createdAt"
+  sortOrder: String = "desc"
+}
+
+# Authentication types
+type AuthPayload {
+  token: String!
+  refreshToken: String!
+  user: User!
+  expiresAt: Date!
+}
+
+input SignupInput {
+  email: String!
+  password: String!
+  fullName: String!
+  timezone: String!
+}
+
+input LoginInput {
+  email: String!
+  password: String!
+}
+
+input RefreshTokenInput {
+  refreshToken: String!
+}
+
+# Response types
+type TaskConnection {
+  edges: [TaskEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type TaskEdge {
+  node: Task!
+  cursor: String!
+}
+
+type PageInfo {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+  endCursor: String
+}
+
+# Error types
+type ApiError {
+  code: String!
+  message: String!
+  field: String
+  details: JSON
+}
+
+# Queries
+type Query {
+  # User queries
+  me: User
+  user(id: ID!): User
+  users(pagination: PaginationInput): [User!]!
+  
+  # Task queries
+  task(id: ID!): Task
+  tasks(
+    filter: TaskFilterInput
+    pagination: PaginationInput
+  ): TaskConnection!
+  
+  myTasks(
+    filter: TaskFilterInput
+    pagination: PaginationInput
+  ): TaskConnection!
+  
+  # Task dependencies
+  taskDependencies(taskId: ID!): [TaskDependency!]!
+  
+  # Task comments
+  taskComments(taskId: ID!, pagination: PaginationInput): [TaskComment!]!
+  
+  # Task attachments
+  taskAttachments(taskId: ID!): [TaskAttachment!]!
+}
+
+# Mutations
+type Mutation {
+  # Authentication
+  signup(input: SignupInput!): AuthPayload!
+  login(input: LoginInput!): AuthPayload!
+  refreshToken(input: RefreshTokenInput!): AuthPayload!
+  logout: Boolean!
+  
+  # User mutations
+  updateProfile(input: UpdateProfileInput!): User!
+  updatePreferences(input: UpdatePreferencesInput!): UserPreferences!
+  
+  # Task mutations
+  createTask(input: CreateTaskInput!): Task!
+  updateTask(id: ID!, input: UpdateTaskInput!): Task!
+  deleteTask(id: ID!): Boolean!
+  completeTask(id: ID!): Task!
+  
+  # Task comments
+  addTaskComment(taskId: ID!, comment: String!): TaskComment!
+  updateTaskComment(id: ID!, comment: String!): TaskComment!
+  deleteTaskComment(id: ID!): Boolean!
+  
+  # Task attachments
+  addTaskAttachment(taskId: ID!, fileName: String!, fileSize: Int!, fileType: String, storageUrl: String!): TaskAttachment!
+  deleteTaskAttachment(id: ID!): Boolean!
+  
+  # Task dependencies
+  addTaskDependency(taskId: ID!, dependsOnTaskId: ID!, dependencyType: String!): TaskDependency!
+  removeTaskDependency(taskId: ID!, dependsOnTaskId: ID!): Boolean!
+}
+
+# Additional input types for mutations
+input UpdateProfileInput {
+  fullName: String
+  phone: String
+  avatarUrl: String
+  timezone: String
+  settings: JSON
+}
+
+input UpdatePreferencesInput {
+  voiceEnabled: Boolean
+  voiceLanguage: String
+  notificationSettings: NotificationSettingsInput
+  calendarSettings: CalendarSettingsInput
+  financialSettings: FinancialSettingsInput
+}
+
+input NotificationSettingsInput {
+  email: Boolean
+  sms: Boolean
+  push: Boolean
+  taskReminders: Boolean
+  eventReminders: Boolean
+  dailySummary: Boolean
+}
+
+input CalendarSettingsInput {
+  defaultView: String
+  weekStartsOn: Int
+  workingHours: WorkingHoursInput
+  timeZone: String
+}
+
+input WorkingHoursInput {
+  start: String
+  end: String
+}
+
+input FinancialSettingsInput {
+  currency: String
+  fiscalYearStart: Int
+  taxRate: Float
+}
+
+# Subscriptions for real-time updates
+type Subscription {
+  taskCreated(userId: ID): Task!
+  taskUpdated(taskId: ID): Task!
+  taskDeleted(taskId: ID): ID!
+  taskCommentAdded(taskId: ID!): TaskComment!
+}
