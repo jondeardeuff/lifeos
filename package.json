@@ -1,40 +1,17 @@
 {
   "name": "lifeos",
   "version": "1.0.0",
-  "private": true,
   "description": "Voice-first AI-powered life management system",
-  "engines": {
-    "node": ">=20.0.0",
-    "pnpm": ">=8.0.0"
-  },
+  "main": "railway-app/server.js",
   "scripts": {
-    "dev": "turbo dev",
-    "build": "turbo build",
-    "start:api": "cd apps/api && node dist/server.js",
-    "test": "turbo test",
-    "lint": "turbo lint",
-    "typecheck": "turbo typecheck",
-    "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
-    "prepare": "husky install",
-    "clean": "turbo clean && rm -rf node_modules",
-    "changeset": "changeset",
-    "version-packages": "changeset version",
-    "release": "turbo build --filter=./packages/* && changeset publish"
+    "start": "node railway-app/server.js",
+    "build": "echo 'Build complete - using pre-built server'"
   },
-  "devDependencies": {
-    "@changesets/cli": "^2.27.0",
-    "husky": "^8.0.0",
-    "lint-staged": "^15.0.0",
-    "prettier": "^3.0.0",
-    "turbo": "^1.11.0"
+  "dependencies": {
+    "@apollo/server": "^4.9.0",
+    "graphql": "^16.8.0"
   },
-  "lint-staged": {
-    "*.{ts,tsx,js,jsx}": [
-      "prettier --write",
-      "eslint --fix"
-    ],
-    "*.{json,md,yml,yaml}": [
-      "prettier --write"
-    ]
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
