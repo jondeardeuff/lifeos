@@ -4,15 +4,24 @@ FROM node:20-alpine
 # Set working directory
 WORKDIR /app
 
-# Copy package.json and install dependencies
-COPY package.json ./
-RUN npm install --production
+# Copy package files
+COPY package*.json ./
+COPY prisma ./prisma/
 
-# Copy the server file
-COPY server.js ./
+# Install dependencies
+RUN npm install
+
+# Generate Prisma client
+RUN npx prisma generate
+
+# Copy all files
+COPY . .
 
 # Expose port
 EXPOSE 4000
 
+# Make start script executable
+RUN chmod +x start.sh
+
 # Start the server
-CMD ["node", "server.js"]
+CMD ["./start.sh"]

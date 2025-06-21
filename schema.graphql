@@ -1,0 +1,42 @@
+type User {
+  id: ID!
+  email: String!
+  firstName: String!
+  lastName: String!
+  fullName: String!
+  createdAt: String!
+}
+
+type AuthPayload {
+  user: User!
+  accessToken: String!
+  refreshToken: String!
+}
+
+type Task {
+  id: ID!
+  title: String!
+  description: String
+  status: String!
+  priority: String!
+  createdAt: String!
+  updatedAt: String!
+}
+
+type Query {
+  me: User
+  tasks: [Task!]!
+  health: String!
+}
+
+type Mutation {
+  login(email: String!, password: String!): AuthPayload!
+  signup(input: SignupInput!): AuthPayload!
+}
+
+input SignupInput {
+  email: String!
+  password: String!
+  firstName: String!
+  lastName: String!
+}

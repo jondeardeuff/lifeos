@@ -1,7 +1,9 @@
 const { ApolloServer } = require('@apollo/server');
 const { startStandaloneServer } = require('@apollo/server/standalone');
+const { prisma } = require('./prisma-client');
+const { hashPassword, verifyPassword, generateTokens, verifyToken } = require('./auth');
 
-// Simple type definitions for demonstration
+// GraphQL type definitions
 const typeDefs = `
   type User {
     id: ID!
@@ -37,6 +39,9 @@ const typeDefs = `
   type Mutation {
     login(email: String!, password: String!): AuthPayload!
     signup(input: SignupInput!): AuthPayload!
+    createTask(input: CreateTaskInput!): Task!
+    updateTask(id: ID!, input: UpdateTaskInput!): Task!
+    deleteTask(id: ID!): Boolean!
   }
 
   input SignupInput {
@@ -45,87 +50,157 @@ const typeDefs = `
     firstName: String!
     lastName: String!
   }
+
+  input CreateTaskInput {
+    title: String!
+    description: String
+    priority: String
+  }
+
+  input UpdateTaskInput {
+    title: String
+    description: String
+    status: String
+    priority: String
+  }
 `;
 
-// Simple resolvers for demonstration
+// GraphQL resolvers
 const resolvers = {
   Query: {
     health: () => "LifeOS API is running!",
-    me: () => {
+    
+    me: async (_, __, { userId }) => {
+      if (!userId) return null;
+      
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+      });
+      
+      if (!user) return null;
+      
       return {
-        id: "1",
-        email: "demo@lifeos.dev",
-        firstName: "Demo",
-        lastName: "User",
-        fullName: "Demo User",
-        createdAt: new Date().toISOString(),
+        ...user,
+        fullName: `${user.firstName} ${user.lastName}`,
       };
     },
-    tasks: () => {
-      return [
-        {
-          id: "1",
-          title: "Complete project setup",
-          description: "Set up the initial project structure",
-          status: "IN_PROGRESS",
-          priority: "HIGH",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: "2",
-          title: "Deploy to Railway",
-          description: "Deploy the application to Railway platform",
-          status: "TODO",
-          priority: "MEDIUM",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: "3",
-          title: "Add database integration",
-          description: "Connect PostgreSQL database for persistent storage",
-          status: "TODO",
-          priority: "HIGH",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-      ];
+    
+    tasks: async (_, __, { userId }) => {
+      if (!userId) return [];
+      
+      return await prisma.task.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+      });
     },
   },
+  
   Mutation: {
-    login: (_, { email, password }) => {
-      // Simple demo login - in real app this would validate against database
-      if (email === "test@lifeos.dev" && password === "password123") {
-        return {
-          user: {
-            id: "1",
-            email: email,
-            firstName: "Test",
-            lastName: "User",
-            fullName: "Test User",
-            createdAt: new Date().toISOString(),
-          },
-          accessToken: "demo-access-token-" + Date.now(),
-          refreshToken: "demo-refresh-token-" + Date.now(),
-        };
+    signup: async (_, { input }) => {
+      const { email, password, firstName, lastName } = input;
+      
+      // Check if user already exists
+      const existingUser = await prisma.user.findUnique({
+        where: { email },
+      });
+      
+      if (existingUser) {
+        throw new Error('User already exists with this email');
       }
-      throw new Error("Invalid credentials");
-    },
-    signup: (_, { input }) => {
-      // Simple demo signup - in real app this would create user in database
+      
+      // Hash password and create user
+      const hashedPassword = await hashPassword(password);
+      const user = await prisma.user.create({
+        data: {
+          email,
+          password: hashedPassword,
+          firstName,
+          lastName,
+        },
+      });
+      
+      const { accessToken, refreshToken } = generateTokens(user.id);
+      
       return {
         user: {
-          id: Date.now().toString(),
-          email: input.email,
-          firstName: input.firstName,
-          lastName: input.lastName,
-          fullName: `${input.firstName} ${input.lastName}`,
-          createdAt: new Date().toISOString(),
+          ...user,
+          fullName: `${user.firstName} ${user.lastName}`,
         },
-        accessToken: "demo-access-token-" + Date.now(),
-        refreshToken: "demo-refresh-token-" + Date.now(),
+        accessToken,
+        refreshToken,
       };
+    },
+    
+    login: async (_, { email, password }) => {
+      const user = await prisma.user.findUnique({
+        where: { email },
+      });
+      
+      if (!user) {
+        throw new Error('Invalid credentials');
+      }
+      
+      const validPassword = await verifyPassword(password, user.password);
+      if (!validPassword) {
+        throw new Error('Invalid credentials');
+      }
+      
+      const { accessToken, refreshToken } = generateTokens(user.id);
+      
+      return {
+        user: {
+          ...user,
+          fullName: `${user.firstName} ${user.lastName}`,
+        },
+        accessToken,
+        refreshToken,
+      };
+    },
+    
+    createTask: async (_, { input }, { userId }) => {
+      if (!userId) throw new Error('Not authenticated');
+      
+      return await prisma.task.create({
+        data: {
+          ...input,
+          userId,
+          priority: input.priority || 'MEDIUM',
+        },
+      });
+    },
+    
+    updateTask: async (_, { id, input }, { userId }) => {
+      if (!userId) throw new Error('Not authenticated');
+      
+      // Verify task belongs to user
+      const task = await prisma.task.findFirst({
+        where: { id, userId },
+      });
+      
+      if (!task) {
+        throw new Error('Task not found');
+      }
+      
+      return await prisma.task.update({
+        where: { id },
+        data: input,
+      });
+    },
+    
+    deleteTask: async (_, { id }, { userId }) => {
+      if (!userId) throw new Error('Not authenticated');
+      
+      // Verify task belongs to user
+      const task = await prisma.task.findFirst({
+        where: { id, userId },
+      });
+      
+      if (!task) {
+        throw new Error('Task not found');
+      }
+      
+      await prisma.task.delete({ where: { id } });
+      return true;
     },
   },
 };
@@ -134,6 +209,7 @@ const resolvers = {
 const server = new ApolloServer({
   typeDefs,
   resolvers,
+  introspection: true,
   formatError: (err) => {
     console.error('GraphQL Error:', err);
     return {
@@ -150,18 +226,56 @@ const start = async () => {
     
     const { url } = await startStandaloneServer(server, {
       listen: { port: Number(PORT), host: '0.0.0.0' },
-      context: async ({ req, res }) => {
-        return {
-          req,
-          res,
-        };
+      context: async ({ req }) => {
+        // Get the user token from the headers
+        const token = req.headers.authorization?.replace('Bearer ', '');
+        let userId = null;
+        
+        if (token) {
+          const decoded = verifyToken(token);
+          if (decoded) {
+            userId = decoded.userId;
+          }
+        }
+        
+        return { userId };
+      },
+      cors: {
+        origin: ['https://lifeos-frontend-production.up.railway.app', 'http://localhost:3000'],
+        credentials: true,
       },
     });
     
     console.log(`🚀 LifeOS API Server ready at ${url}`);
     console.log(`📊 GraphQL Playground available at ${url}graphql`);
     console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`⚡ Demo credentials: test@lifeos.dev / password123`);
+    console.log(`🗄️  Database connected via Prisma`);
+    
+    // Create a demo user on startup if none exists
+    try {
+      await prisma.$connect();
+      console.log('✅ Database connected successfully');
+      
+      const demoUser = await prisma.user.findUnique({
+        where: { email: 'test@lifeos.dev' },
+      });
+      
+      if (!demoUser) {
+        const hashedPassword = await hashPassword('password123');
+        await prisma.user.create({
+          data: {
+            email: 'test@lifeos.dev',
+            password: hashedPassword,
+            firstName: 'Test',
+            lastName: 'User',
+          },
+        });
+        console.log(`✅ Demo user created: test@lifeos.dev / password123`);
+      }
+    } catch (dbError) {
+      console.error('❌ Database connection error:', dbError.message);
+      console.log('⚠️  Server will continue without database functionality');
+    }
   } catch (err) {
     console.error('Server startup error:', err);
     process.exit(1);

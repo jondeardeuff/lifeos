@@ -1,0 +1,281 @@
+# Cursor Rules for Life OS Project
+
+## Code Style
+
+### TypeScript
+- Use TypeScript strict mode
+- No `any` types - use `unknown` and type guards
+- Prefer interfaces over types for objects
+- Use enums for finite sets of values
+- Export types separately from implementations
+
+### Naming Conventions
+- Components: PascalCase (e.g., `TaskList`, `VoiceInput`)
+- Functions: camelCase (e.g., `parseVoiceCommand`, `syncCalendar`)
+- Constants: UPPER_SNAKE_CASE (e.g., `MAX_RETRY_ATTEMPTS`)
+- Files: kebab-case (e.g., `task-parser.ts`, `voice-input.tsx`)
+- Test files: `*.test.ts` or `*.spec.ts`
+
+### File Structure
+```
+/src
+  /features
+    /voice
+      /components
+      /hooks
+      /services
+      /types
+      /utils
+      index.ts
+  /shared
+    /components
+    /hooks
+    /services
+    /types
+    /utils
+  /core
+    /api
+    /auth
+    /database
+    /state
+```
+
+## Component Guidelines
+
+### React Components
+```typescript
+// Always use function components with TypeScript
+interface TaskItemProps {
+  task: Task;
+  onUpdate: (task: Task) => void;
+  onDelete: (id: string) => void;
+}
+
+export const TaskItem: React.FC<TaskItemProps> = ({ 
+  task, 
+  onUpdate, 
+  onDelete 
+}) => {
+  // Component logic
+};
+```
+
+### Hooks Pattern
+- Custom hooks start with `use` (e.g., `useVoiceRecording`)
+- Return object with named properties, not arrays
+- Handle cleanup in useEffect
+- Memoize expensive computations
+
+### State Management
+- Use Zustand for global state
+- Keep state normalized (no nested objects)
+- Actions should be pure functions
+- Use immer for immutable updates
+
+## API Design
+
+### REST Endpoints
+```
+GET    /api/tasks          - List tasks
+POST   /api/tasks          - Create task
+GET    /api/tasks/:id      - Get single task
+PUT    /api/tasks/:id      - Update task
+DELETE /api/tasks/:id      - Delete task
+```
+
+### Error Handling
+```typescript
+// Always use consistent error format
+interface ApiError {
+  code: string;
+  message: string;
+  field?: string;
+  details?: unknown;
+}
+
+// Wrap all async operations
+try {
+  const result = await apiCall();
+  return { data: result, error: null };
+} catch (error) {
+  return { data: null, error: formatError(error) };
+}
+```
+
+## Testing Requirements
+
+### Test Coverage
+- Minimum 80% coverage for business logic
+- 100% coverage for financial calculations
+- E2E tests for critical user flows
+
+### Test Structure
+```typescript
+describe('TaskParser', () => {
+  describe('parseVoiceCommand', () => {
+    it('should extract task title from simple command', () => {
+      // Arrange
+      const command = "Add buy milk to grocery list";
+      
+      // Act
+      const result = parseVoiceCommand(command);
+      
+      // Assert
+      expect(result.title).toBe("buy milk");
+      expect(result.category).toBe("grocery");
+    });
+  });
+});
+```
+
+## Performance Rules
+
+### React Optimization
+- Memoize expensive components with React.memo
+- Use useMemo for expensive computations
+- Virtualize long lists (>100 items)
+- Lazy load routes and heavy components
+
+### API Optimization
+- Implement pagination for lists
+- Use field selection (GraphQL style)
+- Cache responses with SWR/React Query
+- Batch API calls when possible
+
+## Security Requirements
+
+### Data Handling
+- Never log sensitive data (passwords, tokens, financial)
+- Sanitize all user inputs
+- Use parameterized queries (no string concatenation)
+- Implement rate limiting on all endpoints
+
+### Authentication
+- JWT tokens with short expiration (15 min)
+- Refresh tokens in httpOnly cookies
+- Implement CSRF protection
+- Use secure headers (helmet.js)
+
+## Voice/AI Specific Rules
+
+### Voice Commands
+- Always provide text feedback for voice inputs
+- Show confidence scores when < 90%
+- Implement "undo" for voice actions
+- Max 30 seconds recording time
+
+### LLM Integration
+```typescript
+// Always structure LLM prompts consistently
+interface LLMPrompt {
+  systemPrompt: string;
+  userInput: string;
+  context?: Record<string, unknown>;
+  maxTokens: number;
+  temperature: number;
+}
+```
+
+## Database Patterns
+
+### Migrations
+- Never modify existing migrations
+- One migration per feature
+- Include rollback scripts
+- Test migrations on copy of production
+
+### Queries
+```typescript
+// Use query builders, not raw SQL
+const tasks = await db
+  .select('*')
+  .from('tasks')
+  .where('user_id', userId)
+  .orderBy('created_at', 'desc')
+  .limit(50);
+```
+
+## Git Commit Rules
+
+### Commit Messages
+```
+feat: add voice recording to task creation
+fix: resolve timezone issue in calendar sync  
+refactor: extract task parser into separate module
+test: add unit tests for financial calculations
+docs: update API documentation for v2 endpoints
+```
+
+### Branch Naming
+- `feature/voice-recording`
+- `fix/calendar-sync-timezone`
+- `refactor/task-parser-module`
+- `release/v1.2.0`
+
+## Documentation
+
+### Code Comments
+```typescript
+/**
+ * Parses natural language into structured task data
+ * @param input - Raw voice transcription
+ * @param context - User's current context (project, location)
+ * @returns Parsed task object or null if parsing fails
+ * @example
+ * parseTask("Call John tomorrow at 3pm about the Mitchell project")
+ * // Returns: { title: "Call John", due: "2024-01-15T15:00:00Z", project: "Mitchell" }
+ */
+```
+
+### README Files
+Each feature folder must have README with:
+- Purpose of the feature
+- Architecture decisions
+- API documentation
+- Testing instructions
+
+## Monitoring
+
+### Logging
+```typescript
+// Use structured logging
+logger.info('Task created', {
+  userId,
+  taskId,
+  source: 'voice',
+  duration: Date.now() - startTime
+});
+```
+
+### Metrics
+- Track voice command success rate
+- Monitor API response times
+- Log feature usage statistics
+- Track error rates by type
+
+## Accessibility
+
+### WCAG 2.1 AA Compliance
+- All interactive elements keyboard accessible
+- ARIA labels on all controls
+- Color contrast ratio >= 4.5:1
+- Focus indicators visible
+- Screen reader announcements for dynamic content
+
+## Progressive Enhancement
+
+### Offline First
+- Cache critical data locally
+- Queue actions when offline
+- Sync when connection restored
+- Show offline status clearly
+
+### Feature Detection
+```typescript
+// Always check for API availability
+if ('SpeechRecognition' in window) {
+  enableVoiceFeatures();
+} else {
+  showTextOnlyInterface();
+}
+```

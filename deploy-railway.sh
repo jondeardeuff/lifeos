@@ -24,6 +24,8 @@ railway variables set NODE_ENV=production
 railway variables set JWT_SECRET=$(openssl rand -base64 32)
 railway variables set CORS_ORIGIN="*"
 railway variables set PORT=4000
+railway variables set APOLLO_KEY="service:My-Graph-afgxw:LV8Og-wQ6YReBameIsgIQQ"
+railway variables set APOLLO_GRAPH_REF="My-Graph-afgxw@current"
 
 # Deploy the application
 echo "🚀 Deploying to Railway..."

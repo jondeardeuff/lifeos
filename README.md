@@ -2,14 +2,33 @@
 
 A comprehensive, AI-powered life management platform that seamlessly integrates work and personal tasks, calendar, finances, and communication through natural voice interaction.
 
-## ✨ Features
+## ✨ Current Implementation (Phase 1)
 
-- 🔐 **Complete Authentication System** - JWT-based auth with signup/login
-- 📋 **Task Management** - Full CRUD operations with priorities, assignments, and dependencies  
-- 🗄️ **PostgreSQL Database** - 29 tables covering users, tasks, projects, finances, and more
-- 🚀 **GraphQL API** - Modern API with Apollo Server
-- 🎨 **React Frontend** - Responsive UI with Tailwind CSS
+- 🔐 **Authentication System** - JWT-based signup/login with user management
+- 📋 **Basic Task Management** - Create, read, update, delete tasks with status/priority
+- 🗄️ **PostgreSQL Database** - User and task tables with Prisma ORM
+- 🚀 **GraphQL API** - Apollo Server with 8 core operations
+- 🎨 **React Frontend** - Responsive UI with Tailwind CSS and TypeScript
 - 🐳 **Production Ready** - Docker and Railway deployment configured
+
+## 🚧 Planned Features (See Documentation)
+
+The complete LifeOS vision includes voice-first interface, AI automation, financial management, team collaboration, mobile apps, and advanced analytics. See the [comprehensive documentation](docs/) for the full roadmap and specifications.
+
+## 📖 Documentation
+
+**[View Complete Documentation →](docs/)**
+
+All project specifications, architecture, and development guidelines are organized in the `docs/` directory:
+
+- **Specifications**: Project overview, features, roadmap, tech stack
+- **Architecture**: System design, database schema, data models  
+- **Development**: Coding standards, testing, deployment, patterns
+- **Features**: Voice commands, UI components, feature breakdown
+- **Guides**: Authentication, security, monitoring implementation
+- **API**: GraphQL specs and external integrations
+
+**AI Development**: The `CLAUDE.md` file contains instructions for AI-assisted development.
 
 ## 🚀 Quick Deploy to Railway
 
@@ -100,26 +119,34 @@ query {
 
 ```
 lifeos/
-├── apps/
-│   ├── api/          # GraphQL API server
-│   └── web/          # React web application
-├── packages/
-│   ├── database/     # Prisma database client
-│   ├── types/        # Shared TypeScript types
-│   └── ui/           # Shared UI components
-├── railway-app/      # Simplified deployment build
-└── tools/            # Development tooling
+├── client/           # React web application
+├── docs/             # 📖 Comprehensive project documentation
+│   ├── specifications/  # Project vision and feature specs
+│   ├── architecture/    # System architecture and data models
+│   ├── api/            # API documentation and integrations
+│   ├── development/    # Coding standards and development guides
+│   ├── features/       # Feature-specific documentation
+│   └── guides/         # Implementation guides
+├── prisma/           # Database schema and migrations
+├── services/         # Backend services (auth, notifications, sync)
+├── CLAUDE.md         # 🤖 AI development assistant instructions
+├── .cursorrules      # Cursor IDE rules
+└── server.js         # Main GraphQL server
 ```
 
 ## 🗄️ Database Schema
 
-**Core Entities:**
-- 👥 Users & Authentication
-- 📋 Tasks & Projects
+**Current Implementation:**
+- 👥 Users (authentication and profiles)
+- 📋 Tasks (basic task management)
+
+**Planned Entities** (See [database schema docs](docs/architecture/database-schema.md)):
 - 📅 Calendar & Events
 - 💰 Financial Management
 - 🎙️ Voice & AI Context
 - 📊 Audit Logging
+- 🏢 Projects & Teams
+- 💬 Communication Hub
 
 ## 🚀 Deployment
 

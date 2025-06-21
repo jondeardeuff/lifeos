@@ -68,3 +68,4 @@ public/uploads
 # Misc
 .notes
 .todo
+/generated/prisma
