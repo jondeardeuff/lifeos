@@ -4,7 +4,9 @@
   "description": "LifeOS GraphQL API Server",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node dist/index.js",
+    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "build": "tsc"
   },
   "dependencies": {
     "@apollo/server": "4.9.0",
@@ -19,6 +21,10 @@
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
-    "@types/jsonwebtoken": "^9.0.10"
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^24.0.3",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.8.3"
   }
 }
