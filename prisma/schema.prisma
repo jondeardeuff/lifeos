@@ -23,33 +23,66 @@ model User {
   updatedAt DateTime @updatedAt
   
   tasks     Task[]
+  tags      TaskTag[]
   
   @@map("users")
 }
 
 model Task {
-  id          String   @id @default(cuid())
-  title       String
-  description String?
-  status      TaskStatus @default(TODO)
-  priority    TaskPriority @default(MEDIUM)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
+  id          String      @id @default(cuid())
+  title       String      @db.VarChar(500)
+  description String?     @db.Text
+  priority    Priority    @default(MEDIUM)
+  status      TaskStatus  @default(PENDING)
+  dueDate     DateTime?
+  dueTime     String?
+  timezone    String?
+  metadata    Json?
+
+  // Relationships
   userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tags        TaskTag[]
+
+  // Audit
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Indices for performant queries
+  @@index([userId, status])
+  @@index([userId, priority])
+  @@index([userId, dueDate])
+  @@index([title])
+
   @@map("tasks")
 }
 
-enum TaskStatus {
-  TODO
-  IN_PROGRESS
-  COMPLETED
+model TaskTag {
+  id     String   @id @default(cuid())
+  name   String   @db.VarChar(50)
+  color  String   @default("#3B82F6")
+
+  // Relationships
+  userId String
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks  Task[]
+
+  @@unique([userId, name])
+  @@index([userId])
+  @@map("task_tags")
 }
 
-enum TaskPriority {
+enum Priority {
+  LOWEST
   LOW
   MEDIUM
   HIGH
+  HIGHEST
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
 }
