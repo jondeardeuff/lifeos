@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { ApolloServer } from '@apollo/server';
 import { startStandaloneServer } from '@apollo/server/standalone';
-import { PrismaClient, User as PrismaUser, Task as PrismaTask } from '@prisma/client';
+import { PrismaClient, User as PrismaUser } from '@prisma/client';
 
 import typeDefs from './graphql/schema';
 
@@ -12,7 +12,7 @@ import {
   verifyPassword,
   generateTokens,
   verifyToken,
-} from '../auth';
+} from './auth';
 
 // --------------------------------------------------
 // Context
@@ -64,7 +64,7 @@ const resolvers = {
         offset?: number;
       },
       ctx: Context,
-    ): Promise<PrismaTask[]> => {
+    ): Promise<unknown[]> => {
       if (!ctx.userId) return [];
 
       // Basic filter implementation (enhance later)
@@ -159,13 +159,6 @@ const startServer = async (): Promise<void> => {
       }
 
       return { userId, prisma };
-    },
-    cors: {
-      origin: [
-        'https://lifeos-frontend-production.up.railway.app',
-        'http://localhost:3000',
-      ],
-      credentials: true,
     },
   });
 
