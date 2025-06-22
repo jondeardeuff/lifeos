@@ -1,3 +1,7 @@
+# Scalar types
+scalar DateTime
+scalar JSON
+
 type User {
   id: ID!
   email: String!
@@ -13,25 +17,150 @@ type AuthPayload {
   refreshToken: String!
 }
 
+# Enhanced Task type with advanced properties
 type Task {
   id: ID!
   title: String!
   description: String
-  status: String!
-  priority: String!
-  createdAt: String!
-  updatedAt: String!
+  priority: Priority!
+  status: TaskStatus!
+  dueDate: DateTime
+  dueTime: String
+  timezone: String
+  tags: [TaskTag!]!
+  metadata: JSON
+  
+  # Computed fields
+  isOverdue: Boolean!
+  dueDateStatus: DueDateStatus!
+  tagCount: Int!
+  descriptionWordCount: Int!
+  descriptionCharCount: Int!
+  
+  # Relationships
+  user: User!
+  
+  # Audit
+  createdAt: DateTime!
+  updatedAt: DateTime!
 }
 
+enum Priority {
+  LOWEST
+  LOW
+  MEDIUM
+  HIGH
+  HIGHEST
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum DueDateStatus {
+  OVERDUE
+  DUE_TODAY
+  DUE_SOON
+  FUTURE
+}
+
+type TaskTag {
+  id: ID!
+  name: String!
+  color: String!
+  taskCount: Int!
+  user: User!
+}
+
+type TaskStats {
+  total: Int!
+  pending: Int!
+  inProgress: Int!
+  completed: Int!
+  cancelled: Int!
+  overdue: Int!
+  dueToday: Int!
+}
+
+# Input types for task operations
+input CreateTaskInput {
+  title: String!
+  description: String
+  priority: Priority
+  status: TaskStatus
+  dueDate: DateTime
+  dueTime: String
+  timezone: String
+  tags: [String!]
+  metadata: JSON
+}
+
+input UpdateTaskInput {
+  title: String
+  description: String
+  priority: Priority
+  status: TaskStatus
+  dueDate: DateTime
+  dueTime: String
+  timezone: String
+  tags: [String!]
+  metadata: JSON
+}
+
+input CreateTagInput {
+  name: String!
+  color: String
+}
+
+input UpdateTagInput {
+  name: String
+  color: String
+}
+
+# Queries
 type Query {
   me: User
-  tasks: [Task!]!
+  
+  # Task queries
+  tasks(
+    status: TaskStatus
+    priority: Priority
+    tags: [String!]
+    dueDateStatus: DueDateStatus
+    search: String
+    limit: Int
+    offset: Int
+  ): [Task!]!
+  
+  task(id: ID!): Task
+  taskTags: [TaskTag!]!
+  taskStats: TaskStats!
+  
   health: String!
 }
 
+# Mutations
 type Mutation {
+  # Authentication
   login(email: String!, password: String!): AuthPayload!
   signup(input: SignupInput!): AuthPayload!
+  
+  # Task management
+  createTask(input: CreateTaskInput!): Task!
+  updateTask(id: ID!, input: UpdateTaskInput!): Task!
+  deleteTask(id: ID!): Boolean!
+  
+  # Tag management
+  createTag(input: CreateTagInput!): TaskTag!
+  updateTag(id: ID!, input: UpdateTagInput!): TaskTag!
+  deleteTag(id: ID!): Boolean!
+  
+  # Bulk operations
+  bulkUpdateTasks(ids: [ID!]!, input: UpdateTaskInput!): [Task!]!
+  bulkDeleteTasks(ids: [ID!]!): Boolean!
 }
 
 input SignupInput {

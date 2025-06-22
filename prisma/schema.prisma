@@ -22,34 +22,227 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
-  tasks     Task[]
+  tasks         Task[]
+  taskTags      TaskTag[]
+  apiKeys       ApiKey[]
+  sessionTokens SessionToken[]
   
   @@map("users")
 }
 
 model Task {
   id          String   @id @default(cuid())
-  title       String
-  description String?
-  status      TaskStatus @default(TODO)
-  priority    TaskPriority @default(MEDIUM)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  title       String   @db.VarChar(500)
+  description String?  @db.Text // 5000 char limit enforced in app logic
+  priority    Priority @default(MEDIUM)
+  status      TaskStatus @default(PENDING)
+  dueDate     DateTime?
+  dueTime     String?  // Store time separately for timezone handling
+  timezone    String?  // User's timezone for due date
   
+  // Metadata and organization
+  tags        TaskTag[]
+  metadata    Json?    // Custom metadata as JSONB
+  
+  // Relationships
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
+  // Audit fields
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([userId, status])
+  @@index([userId, priority])
+  @@index([userId, dueDate])
+  @@index([title])
   @@map("tasks")
 }
 
-enum TaskStatus {
-  TODO
-  IN_PROGRESS
-  COMPLETED
+enum Priority {
+  LOWEST   // 1
+  LOW      // 2
+  MEDIUM   // 3
+  HIGH     // 4
+  HIGHEST  // 5
 }
 
-enum TaskPriority {
-  LOW
-  MEDIUM
-  HIGH
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
 }
+
+model TaskTag {
+  id     String @id @default(cuid())
+  name   String @db.VarChar(50)
+  color  String @default("#3B82F6") // Hex color code
+  userId String
+  
+  // Relationships
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks  Task[]
+  
+  @@unique([userId, name])
+  @@index([userId])
+  @@map("task_tags")
+}
+
+// API Gateway Models
+model ApiKey {
+  id           String    @id @default(cuid())
+  name         String    @db.VarChar(100)
+  key          String    @unique // Hashed version
+  keyPrefix    String    @db.VarChar(8) // First 8 characters for identification
+  permissions  String[]  @default([])
+  isActive     Boolean   @default(true)
+  expiresAt    DateTime?
+  lastUsedAt   DateTime?
+  usageCount   Int       @default(0)
+  rateLimit    Json?     // Store custom rate limits
+  
+  // Relationships
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Audit
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  
+  @@index([userId, isActive])
+  @@index([keyPrefix, isActive])
+  @@index([expiresAt])
+  @@map("api_keys")
+}
+
+model RequestLog {
+  id            String    @id @default(cuid())
+  method        String    @db.VarChar(10)
+  url           String    @db.VarChar(2000)
+  userAgent     String?   @db.VarChar(500)
+  ipAddress     String    @db.VarChar(45) // IPv6 compatible
+  statusCode    Int
+  responseTime  Int       // milliseconds
+  requestSize   Int       @default(0)
+  responseSize  Int       @default(0)
+  error         String?   @db.VarChar(1000)
+  correlationId String    @unique @db.VarChar(36)
+  
+  // Optional relationships
+  userId        String?
+  apiKeyId      String?
+  
+  // Audit
+  timestamp     DateTime  @default(now())
+  
+  @@index([userId, timestamp])
+  @@index([correlationId])
+  @@index([timestamp])
+  @@index([statusCode, timestamp])
+  @@map("request_logs")
+}
+
+model DailyApiMetrics {
+  id        String   @id @default(cuid())
+  date      DateTime @unique @db.Date
+  metrics   Json     // Store aggregated metrics as JSONB
+  createdAt DateTime @default(now())
+  
+  @@index([date])
+  @@map("daily_api_metrics")
+}
+
+// Security and Audit Models
+model AuditLog {
+  id            String    @id @default(cuid())
+  eventType     String    @db.VarChar(100)
+  userId        String?
+  sessionId     String?   @db.VarChar(100)
+  resourceType  String?   @db.VarChar(50)
+  resourceId    String?   @db.VarChar(50)
+  details       Json      @default("{}")
+  ipAddress     String    @db.VarChar(45) // IPv6 compatible
+  userAgent     String?   @db.Text
+  correlationId String?   @db.VarChar(36)
+  timestamp     DateTime  @default(now())
+  success       Boolean   @default(true)
+  riskScore     Int?      // 1-10 risk score
+  
+  @@index([userId, timestamp])
+  @@index([eventType, timestamp])
+  @@index([ipAddress, timestamp])
+  @@index([riskScore])
+  @@index([timestamp])
+  @@map("audit_logs")
+}
+
+model SecurityIncident {
+  id          String    @id @default(cuid())
+  type        String    @db.VarChar(100)
+  severity    String    @db.VarChar(20) // low, medium, high, critical
+  description String    @db.Text
+  userId      String?
+  ipAddress   String?   @db.VarChar(45)
+  details     Json      @default("{}")
+  status      String    @default("open") @db.VarChar(20) // open, investigating, resolved, closed
+  assignedTo  String?
+  resolvedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@index([status, severity])
+  @@index([type, createdAt])
+  @@index([userId])
+  @@index([ipAddress])
+  @@map("security_incidents")
+}
+
+model EncryptionKey {
+  id         String    @id @default(cuid())
+  keyVersion Int       @unique
+  algorithm  String    @default("aes-256-gcm") @db.VarChar(50)
+  keyData    String    @db.Text // Encrypted master key
+  isActive   Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+  rotatedAt  DateTime?
+  
+  @@index([isActive, keyVersion])
+  @@map("encryption_keys")
+}
+
+model SessionToken {
+  id          String    @id @default(cuid())
+  token       String    @unique @db.VarChar(255) // Hashed session token
+  userId      String
+  ipAddress   String    @db.VarChar(45)
+  userAgent   String?   @db.Text
+  isActive    Boolean   @default(true)
+  expiresAt   DateTime
+  lastUsedAt  DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+  
+  // Relationships
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId, isActive])
+  @@index([token, isActive])
+  @@index([expiresAt])
+  @@map("session_tokens")
+}
+
+model LoginAttempt {
+  id           String    @id @default(cuid())
+  email        String    @db.VarChar(255)
+  ipAddress    String    @db.VarChar(45)
+  userAgent    String?   @db.Text
+  success      Boolean
+  failureReason String?  @db.VarChar(255)
+  timestamp    DateTime  @default(now())
+  
+  @@index([email, timestamp])
+  @@index([ipAddress, timestamp])
+  @@index([success, timestamp])
+  @@map("login_attempts")
+}
+
