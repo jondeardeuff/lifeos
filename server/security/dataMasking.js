@@ -413,7 +413,7 @@ class DataMasking {
       phone: '+1-555-123-4567',
       ssn: '123-45-6789',
       creditCard: '4532-1234-5678-9012',
-      apiKey: 'sk_test_4eC39HqLyjWDarjtT1zdp7dc'
+      apiKey: 
     };
     
     const results = {};
